@@ -60,6 +60,7 @@ public class ProfessionalController {
         Professional data = new Professional();
         data.setName(request.name());
         data.setPhone(request.phone());
+        data.setEmail(request.email());
         data.setProfilePicture(request.profilePicture());
         data.setDescription(request.description());
         data.setScheduleMode(request.scheduleMode());

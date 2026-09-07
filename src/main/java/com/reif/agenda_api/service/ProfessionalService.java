@@ -48,6 +48,7 @@ public class ProfessionalService {
         Professional professional = findById(id);
         professional.setName(data.getName());
         professional.setPhone(data.getPhone());
+        professional.setEmail(data.getEmail());
         professional.setProfilePicture(data.getProfilePicture());
         professional.setDescription(data.getDescription());
         professional.setScheduleMode(data.getScheduleMode());
