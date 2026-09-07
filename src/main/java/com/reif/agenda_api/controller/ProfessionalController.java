@@ -1,5 +1,9 @@
 package com.reif.agenda_api.controller;
 
+import com.reif.agenda_api.dto.PasswordUpdateDTO;
+import com.reif.agenda_api.dto.ProfessionalRequestDTO;
+import com.reif.agenda_api.dto.ProfessionalResponseDTO;
+import com.reif.agenda_api.dto.ProfessionalUpdateDTO;
 import com.reif.agenda_api.model.Professional;
 import com.reif.agenda_api.service.ProfessionalService;
 import jakarta.validation.Valid;
@@ -8,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/professionals")
@@ -21,31 +24,54 @@ public class ProfessionalController {
     }
 
     @PostMapping
-    public ResponseEntity<Professional> register(@Valid @RequestBody Professional professional) {
+    public ResponseEntity<ProfessionalResponseDTO> register(@Valid @RequestBody ProfessionalRequestDTO request) {
+        Professional professional = new Professional();
+        professional.setName(request.name());
+        professional.setEmail(request.email());
+        professional.setPassword(request.password());
+        professional.setPhone(request.phone());
+        professional.setProfilePicture(request.profilePicture());
+        professional.setDescription(request.description());
+        professional.setScheduleMode(
+                request.scheduleMode() != null ? request.scheduleMode() : Professional.ScheduleMode.ONLINE
+        );
+
         Professional saved = professionalService.register(professional);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ProfessionalResponseDTO.fromEntity(saved));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Professional> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(professionalService.findById(id));
+    public ResponseEntity<ProfessionalResponseDTO> findById(@PathVariable Long id) {
+        Professional professional = professionalService.findById(id);
+        return ResponseEntity.ok(ProfessionalResponseDTO.fromEntity(professional));
     }
 
     @GetMapping
-    public ResponseEntity<List<Professional>> findAll() {
-        return ResponseEntity.ok(professionalService.findAll());
+    public ResponseEntity<List<ProfessionalResponseDTO>> findAll() {
+        List<ProfessionalResponseDTO> response = professionalService.findAll().stream()
+                .map(ProfessionalResponseDTO::fromEntity)
+                .toList();
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Professional> update(@PathVariable Long id,
-                                                @Valid @RequestBody Professional professional) {
-        return ResponseEntity.ok(professionalService.update(id, professional));
+    public ResponseEntity<ProfessionalResponseDTO> update(@PathVariable Long id,
+                                                           @Valid @RequestBody ProfessionalUpdateDTO request) {
+        Professional data = new Professional();
+        data.setName(request.name());
+        data.setPhone(request.phone());
+        data.setProfilePicture(request.profilePicture());
+        data.setDescription(request.description());
+        data.setScheduleMode(request.scheduleMode());
+
+        Professional updated = professionalService.update(id, data);
+        return ResponseEntity.ok(ProfessionalResponseDTO.fromEntity(updated));
     }
 
     @PatchMapping("/{id}/password")
     public ResponseEntity<Void> updatePassword(@PathVariable Long id,
-                                                @RequestBody Map<String, String> body) {
-        professionalService.updatePassword(id, body.get("password"));
+                                                @Valid @RequestBody PasswordUpdateDTO request) {
+        professionalService.updatePassword(id, request.newPassword());
         return ResponseEntity.noContent().build();
     }
 

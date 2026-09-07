@@ -29,15 +29,18 @@ public class Professional {
     @Column(nullable = false)
     private String password;
 
-    @Column(length = 20)
+    @Column (length = 20)
     private String phone;
 
     @Column(name = "profile_picture", columnDefinition = "TEXT")
     private String profilePicture;
 
+    @Column(length = 500)
+    private String description;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "schedule_mode", nullable = false, length = 20)
-    private ScheduleMode scheduleMode = ScheduleMode.MANUAL;
+    private ScheduleMode scheduleMode = ScheduleMode.ONLINE;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -87,6 +90,14 @@ public class Professional {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getProfilePicture() {

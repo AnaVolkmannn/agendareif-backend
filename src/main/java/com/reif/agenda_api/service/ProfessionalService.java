@@ -49,6 +49,7 @@ public class ProfessionalService {
         professional.setName(data.getName());
         professional.setPhone(data.getPhone());
         professional.setProfilePicture(data.getProfilePicture());
+        professional.setDescription(data.getDescription());
         professional.setScheduleMode(data.getScheduleMode());
         return professionalRepository.save(professional);
     }
