@@ -1,7 +1,6 @@
 package com.reif.agenda_api.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.NoArgsConstructor;
 
@@ -21,20 +20,24 @@ public class ScheduleException {
     @JoinColumn(name = "professional_id", nullable = false)
     private Professional professional;
 
-    @NotBlank
-    @Column(nullable = false, length = 10)
-    private String type;
-
     @NotNull
-    @Column(name = "start_time", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private ExceptionType type;
+
+    @Column(name = "start_time")
     private LocalDateTime startTime;
 
-    @NotNull
-    @Column(name = "end_time", nullable = false)
+    @Column(name = "end_time")
     private LocalDateTime endTime;
 
     @Column(name = "break_between")
     private Integer breakBetween;
+
+    public enum ExceptionType {
+        DAY_OFF,
+        SPECIAL
+    }
 
     // --- Getters e setters ---
 
@@ -54,11 +57,11 @@ public class ScheduleException {
         this.professional = professional;
     }
 
-    public String getType() {
+    public ExceptionType getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(ExceptionType type) {
         this.type = type;
     }
 
