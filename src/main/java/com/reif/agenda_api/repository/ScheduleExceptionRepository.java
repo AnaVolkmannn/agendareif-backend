@@ -4,6 +4,7 @@ import com.reif.agenda_api.model.ScheduleException;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -11,7 +12,7 @@ public interface ScheduleExceptionRepository extends JpaRepository<ScheduleExcep
 
     List<ScheduleException> findByProfessionalId(Long professionalId);
 
-    List<ScheduleException> findByProfessionalIdAndType(
-            Long professionalId, ScheduleException.ExceptionType type
+    boolean existsByProfessionalIdAndStartTimeLessThanAndEndTimeGreaterThan(
+            Long professionalId, LocalDateTime endTime, LocalDateTime startTime
     );
 }
