@@ -10,7 +10,8 @@ public record ScheduleExceptionResponseDTO(
         ScheduleException.ExceptionType type,
         LocalDateTime startTime,
         LocalDateTime endTime,
-        Integer breakBetween
+        Long breakBetweenId,
+        Integer breakDuration
 ) {
     public static ScheduleExceptionResponseDTO fromEntity(ScheduleException exception) {
         return new ScheduleExceptionResponseDTO(
@@ -19,7 +20,8 @@ public record ScheduleExceptionResponseDTO(
                 exception.getType(),
                 exception.getStartTime(),
                 exception.getEndTime(),
-                exception.getBreakBetween()
+                exception.getBreakBetween() != null ? exception.getBreakBetween().getId() : null,
+                exception.getBreakBetween() != null ? exception.getBreakBetween().getBreak_duration() : null
         );
     }
 }

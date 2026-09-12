@@ -79,7 +79,6 @@ public class WeeklyScheduleController {
         weeklySchedule.setActive(Boolean.TRUE.equals(request.active()));
         weeklySchedule.setStartTime(request.startTime());
         weeklySchedule.setEndTime(request.endTime());
-        weeklySchedule.setBreakBetween(request.breakBetween() != null ? request.breakBetween() : 0);
         return weeklySchedule;
     }
 }
