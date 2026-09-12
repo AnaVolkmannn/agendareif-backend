@@ -28,8 +28,9 @@ public class ScheduleException {
     @Column(name = "end_time", nullable = false)
     private LocalDateTime endTime;
 
-    @Column(name = "break_between")
-    private Integer breakBetween;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "break_between_id")
+    private BreakBetween breakBetween;
 
     public enum ExceptionType {
         DAY_OFF,
@@ -78,11 +79,11 @@ public class ScheduleException {
         this.endTime = endTime;
     }
 
-    public Integer getBreakBetween() {
+    public BreakBetween getBreakBetween() {
         return breakBetween;
     }
 
-    public void setBreakBetween(Integer breakBetween) {
+    public void setBreakBetween(BreakBetween breakBetween) {
         this.breakBetween = breakBetween;
     }
 }
