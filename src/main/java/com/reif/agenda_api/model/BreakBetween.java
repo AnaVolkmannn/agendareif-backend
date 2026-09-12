@@ -1,7 +1,6 @@
 package com.reif.agenda_api.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -17,7 +16,6 @@ public class BreakBetween {
     @JoinColumn(name = "professional_id", nullable = false)
     private Professional professional;
 
-    @NotBlank
     @Column(nullable = false)
     private Integer break_duration;
 
@@ -38,7 +36,7 @@ public class BreakBetween {
     public void setProfessional(Professional professional) {
         this.professional = professional;
     }
-    
+
     public Integer getBreak_duration() {
         return break_duration;
     }
