@@ -2,7 +2,6 @@ package com.reif.agenda_api.service;
 
 import com.reif.agenda_api.model.Professional;
 import com.reif.agenda_api.model.ScheduleException;
-import com.reif.agenda_api.repository.AppointmentRepository;
 import com.reif.agenda_api.repository.ProfessionalRepository;
 import com.reif.agenda_api.repository.ScheduleExceptionRepository;
 import org.springframework.stereotype.Service;
@@ -16,14 +15,11 @@ public class ScheduleExceptionService {
 
     private final ScheduleExceptionRepository scheduleExceptionRepository;
     private final ProfessionalRepository professionalRepository;
-    private final AppointmentRepository appointmentRepository;
 
     public ScheduleExceptionService(ScheduleExceptionRepository scheduleExceptionRepository,
-                                     ProfessionalRepository professionalRepository,
-                                     AppointmentRepository appointmentRepository) {
+                                     ProfessionalRepository professionalRepository) {
         this.scheduleExceptionRepository = scheduleExceptionRepository;
         this.professionalRepository = professionalRepository;
-        this.appointmentRepository = appointmentRepository;
     }
 
     @Transactional
@@ -33,7 +29,9 @@ public class ScheduleExceptionService {
 
         normalizeAndValidate(exception);
         checkNoOverlappingException(professionalId, exception);
-        checkNoConflictingAppointments(professionalId, exception);
+
+        // TODO: reativar quando Appointment (Model + Repository) existir
+        // checkNoConflictingAppointments(professionalId, exception);
 
         exception.setProfessional(professional);
         return scheduleExceptionRepository.save(exception);
@@ -50,12 +48,6 @@ public class ScheduleExceptionService {
         scheduleExceptionRepository.delete(exception);
     }
 
-    /**
-     * Valida e normaliza a exceção conforme o tipo:
-     * - DAY_OFF (Folga): exige apenas o dia selecionado; passa a cobrir
-     *   00:00 até 00:00 do dia seguinte (o dia inteiro).
-     * - SPECIAL (Horário especial): exige início e fim, com fim após início.
-     */
     private void normalizeAndValidate(ScheduleException exception) {
         if (exception.getStartTime() == null) {
             throw new IllegalArgumentException("A data da exceção é obrigatória.");
@@ -77,10 +69,6 @@ public class ScheduleExceptionService {
         }
     }
 
-    /**
-     * Impede o cadastro se já existir outra exceção (folga ou horário especial)
-     * do mesmo profissional que se sobreponha ao período informado.
-     */
     private void checkNoOverlappingException(Long professionalId, ScheduleException exception) {
         boolean hasOverlap = scheduleExceptionRepository
                 .existsByProfessionalIdAndStartTimeLessThanAndEndTimeGreaterThan(
@@ -94,10 +82,8 @@ public class ScheduleExceptionService {
         }
     }
 
-    /**
-     * Impede o cadastro se já existir algum agendamento (não cancelado) do
-     * profissional dentro do período afetado pela exceção.
-     */
+    // TODO: descomentar e implementar quando Appointment existir
+    /*
     private void checkNoConflictingAppointments(Long professionalId, ScheduleException exception) {
         boolean hasConflict = appointmentRepository.existsByProfessionalIdAndDateTimeBetweenAndCanceledFalse(
                 professionalId, exception.getStartTime(), exception.getEndTime()
@@ -109,4 +95,5 @@ public class ScheduleExceptionService {
             );
         }
     }
+    */
 }
