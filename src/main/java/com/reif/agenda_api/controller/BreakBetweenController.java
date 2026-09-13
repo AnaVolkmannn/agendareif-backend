@@ -8,8 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/break-between")
 public class BreakBetweenController {
@@ -20,36 +18,26 @@ public class BreakBetweenController {
         this.breakBetweenService = breakBetweenService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<BreakBetweenResponseDTO>> findAll() {
-        return ResponseEntity.ok(breakBetweenService.findAll());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<BreakBetweenResponseDTO> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(breakBetweenService.findById(id));
-    }
-
     @GetMapping("/professional/{professionalId}")
-    public ResponseEntity<List<BreakBetweenResponseDTO>> findByProfessionalId(@PathVariable Long professionalId) {
+    public ResponseEntity<BreakBetweenResponseDTO> findByProfessionalId(@PathVariable Long professionalId) {
         return ResponseEntity.ok(breakBetweenService.findByProfessionalId(professionalId));
     }
 
     @PostMapping
-    public ResponseEntity<BreakBetweenResponseDTO> create(@RequestBody BreakBetweenRequestDTO dto) {
+    public ResponseEntity<BreakBetweenResponseDTO> create(@Valid @RequestBody BreakBetweenRequestDTO dto) {
         BreakBetweenResponseDTO created = breakBetweenService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<BreakBetweenResponseDTO> update(@PathVariable Long id,
+    @PutMapping("/professional/{professionalId}")
+    public ResponseEntity<BreakBetweenResponseDTO> update(@PathVariable Long professionalId,
                                                            @Valid @RequestBody BreakBetweenRequestDTO dto) {
-        return ResponseEntity.ok(breakBetweenService.update(id, dto));
+        return ResponseEntity.ok(breakBetweenService.updateByProfessionalId(professionalId, dto));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        breakBetweenService.delete(id);
+    @DeleteMapping("/professional/{professionalId}")
+    public ResponseEntity<Void> delete(@PathVariable Long professionalId) {
+        breakBetweenService.deleteByProfessionalId(professionalId);
         return ResponseEntity.noContent().build();
     }
 }

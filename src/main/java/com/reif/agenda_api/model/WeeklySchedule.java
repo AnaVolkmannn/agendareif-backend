@@ -53,11 +53,6 @@ public class WeeklySchedule {
     @Column(name = "end_time")
     private LocalTime endTime;
 
-    /** Descanso entre um cliente e outro. Referencia a configuração de descanso do profissional. */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "break_between_id")
-    private BreakBetween breakBetween;
-
     // --- Getters e setters ---
 
     public Long getId() {
@@ -108,11 +103,4 @@ public class WeeklySchedule {
         this.endTime = endTime;
     }
 
-    public BreakBetween getBreakBetween() {
-        return breakBetween;
-    }
-
-    public void setBreakBetween(BreakBetween breakBetween) {
-        this.breakBetween = breakBetween;
-    }
 }

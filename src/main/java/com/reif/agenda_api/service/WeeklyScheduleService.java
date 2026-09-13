@@ -1,9 +1,7 @@
 package com.reif.agenda_api.service;
 
-import com.reif.agenda_api.model.BreakBetween;
 import com.reif.agenda_api.model.Professional;
 import com.reif.agenda_api.model.WeeklySchedule;
-import com.reif.agenda_api.repository.BreakBetweenRepository;
 import com.reif.agenda_api.repository.WeeklyScheduleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,14 +15,11 @@ public class WeeklyScheduleService {
 
     private final WeeklyScheduleRepository weeklyScheduleRepository;
     private final ProfessionalService professionalService;
-    private final BreakBetweenRepository breakBetweenRepository;
 
     public WeeklyScheduleService(WeeklyScheduleRepository weeklyScheduleRepository,
-                                  ProfessionalService professionalService,
-                                  BreakBetweenRepository breakBetweenRepository) {
+                                  ProfessionalService professionalService) {
         this.weeklyScheduleRepository = weeklyScheduleRepository;
         this.professionalService = professionalService;
-        this.breakBetweenRepository = breakBetweenRepository;
     }
 
     @Transactional
@@ -36,7 +31,6 @@ public class WeeklyScheduleService {
         }
 
         data.setProfessional(professional);
-        resolveBreakBetween(data);
         validate(data);
         return weeklyScheduleRepository.save(data);
     }
@@ -66,13 +60,10 @@ public class WeeklyScheduleService {
             throw new IllegalArgumentException("Esse dia da semana já está cadastrado para o profissional.");
         }
 
-        resolveBreakBetween(data);
-
         weeklySchedule.setDayOfWeek(data.getDayOfWeek());
         weeklySchedule.setActive(data.isActive());
         weeklySchedule.setStartTime(data.getStartTime());
         weeklySchedule.setEndTime(data.getEndTime());
-        weeklySchedule.setBreakBetween(data.getBreakBetween());
 
         validate(weeklySchedule);
         return weeklyScheduleRepository.save(weeklySchedule);
@@ -92,7 +83,6 @@ public class WeeklyScheduleService {
                 throw new IllegalArgumentException("O dia da semana " + day.getDayOfWeek() + " veio repetido.");
             }
             day.setProfessional(professional);
-            resolveBreakBetween(day);
             validate(day);
         }
 
@@ -110,26 +100,6 @@ public class WeeklyScheduleService {
     public void delete(Long professionalId, Long id) {
         WeeklySchedule weeklySchedule = findById(professionalId, id);
         weeklyScheduleRepository.delete(weeklySchedule);
-    }
-
-    /**
-     * O objeto recebido do controller pode trazer o BreakBetween só com o id
-     * preenchido (vindo do DTO). Aqui resolvemos a referência gerenciada de
-     * verdade antes de persistir, garantindo que o id existe.
-     */
-    private void resolveBreakBetween(WeeklySchedule weeklySchedule) {
-        BreakBetween breakBetween = weeklySchedule.getBreakBetween();
-
-        if (breakBetween == null || breakBetween.getId() == null) {
-            weeklySchedule.setBreakBetween(null);
-            return;
-        }
-
-        BreakBetween managed = breakBetweenRepository.findById(breakBetween.getId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "BreakBetween não encontrado com id: " + breakBetween.getId()));
-
-        weeklySchedule.setBreakBetween(managed);
     }
 
     /**
