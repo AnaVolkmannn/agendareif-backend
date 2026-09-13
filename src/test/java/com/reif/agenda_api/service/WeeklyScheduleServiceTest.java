@@ -49,7 +49,6 @@ class WeeklyScheduleServiceTest {
         segunda.setActive(true);
         segunda.setStartTime(LocalTime.of(9, 0));
         segunda.setEndTime(LocalTime.of(19, 0));
-        segunda.setBreakBetween(15);
     }
 
     private WeeklySchedule novoDia(int diaSemana, boolean ativo, LocalTime inicio, LocalTime fim) {
@@ -58,7 +57,6 @@ class WeeklyScheduleServiceTest {
         dia.setActive(ativo);
         dia.setStartTime(inicio);
         dia.setEndTime(fim);
-        dia.setBreakBetween(0);
         return dia;
     }
 
@@ -173,7 +171,6 @@ class WeeklyScheduleServiceTest {
     @Test
     void deveAtualizarHorarioComSucesso() {
         WeeklySchedule dados = novoDia(1, true, LocalTime.of(13, 0), LocalTime.of(17, 0));
-        dados.setBreakBetween(30);
 
         when(weeklyScheduleRepository.findByIdAndProfessionalId(10L, 1L)).thenReturn(Optional.of(segunda));
         when(weeklyScheduleRepository.save(any(WeeklySchedule.class))).thenReturn(segunda);
@@ -182,7 +179,6 @@ class WeeklyScheduleServiceTest {
 
         assertThat(result.getStartTime()).isEqualTo(LocalTime.of(13, 0));
         assertThat(result.getEndTime()).isEqualTo(LocalTime.of(17, 0));
-        assertThat(result.getBreakBetween()).isEqualTo(30);
         verify(weeklyScheduleRepository).save(segunda);
     }
 

@@ -53,10 +53,6 @@ public class WeeklySchedule {
     @Column(name = "end_time")
     private LocalTime endTime;
 
-    /** Minutos de descanso entre um cliente e outro. 0 = sem descanso. */
-    @Column(name = "break_between", nullable = false)
-    private Integer breakBetween = 0;
-
     // --- Getters e setters ---
 
     public Long getId() {
@@ -107,11 +103,4 @@ public class WeeklySchedule {
         this.endTime = endTime;
     }
 
-    public Integer getBreakBetween() {
-        return breakBetween;
-    }
-
-    public void setBreakBetween(Integer breakBetween) {
-        this.breakBetween = breakBetween;
-    }
 }

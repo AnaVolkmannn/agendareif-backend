@@ -64,7 +64,6 @@ public class WeeklyScheduleService {
         weeklySchedule.setActive(data.isActive());
         weeklySchedule.setStartTime(data.getStartTime());
         weeklySchedule.setEndTime(data.getEndTime());
-        weeklySchedule.setBreakBetween(data.getBreakBetween());
 
         validate(weeklySchedule);
         return weeklyScheduleRepository.save(weeklySchedule);
@@ -108,10 +107,6 @@ public class WeeklyScheduleService {
      * início e fim coerentes, senão a agenda gera horários inválidos.
      */
     private void validate(WeeklySchedule weeklySchedule) {
-        if (weeklySchedule.getBreakBetween() == null) {
-            weeklySchedule.setBreakBetween(0);
-        }
-
         if (!weeklySchedule.isActive()) {
             return;
         }

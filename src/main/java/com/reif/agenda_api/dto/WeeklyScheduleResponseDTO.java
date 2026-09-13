@@ -15,9 +15,8 @@ public record WeeklyScheduleResponseDTO(
         LocalTime startTime,
 
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
-        LocalTime endTime,
+        LocalTime endTime
 
-        Integer breakBetween
 ) {
 
     public static WeeklyScheduleResponseDTO fromEntity(WeeklySchedule weeklySchedule) {
@@ -27,8 +26,7 @@ public record WeeklyScheduleResponseDTO(
                 weeklySchedule.getDayOfWeek(),
                 weeklySchedule.isActive(),
                 weeklySchedule.getStartTime(),
-                weeklySchedule.getEndTime(),
-                weeklySchedule.getBreakBetween()
+                weeklySchedule.getEndTime()
         );
     }
 }

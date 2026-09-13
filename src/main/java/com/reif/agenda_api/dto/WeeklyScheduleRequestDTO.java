@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
 
 import java.time.LocalTime;
 
@@ -22,9 +21,7 @@ public record WeeklyScheduleRequestDTO(
         LocalTime startTime,
 
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
-        LocalTime endTime,
+        LocalTime endTime
 
-        @PositiveOrZero(message = "O descanso entre clientes não pode ser negativo")
-        Integer breakBetween
 ) {
 }

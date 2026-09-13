@@ -28,9 +28,6 @@ public class ScheduleException {
     @Column(name = "end_time", nullable = false)
     private LocalDateTime endTime;
 
-    @Column(name = "break_between")
-    private Integer breakBetween;
-
     public enum ExceptionType {
         DAY_OFF,
         SPECIAL
@@ -78,11 +75,4 @@ public class ScheduleException {
         this.endTime = endTime;
     }
 
-    public Integer getBreakBetween() {
-        return breakBetween;
-    }
-
-    public void setBreakBetween(Integer breakBetween) {
-        this.breakBetween = breakBetween;
-    }
 }
