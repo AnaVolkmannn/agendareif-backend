@@ -9,8 +9,6 @@ import com.reif.agenda_api.repository.ProfessionalRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 public class BreakBetweenService {
 
@@ -23,25 +21,16 @@ public class BreakBetweenService {
         this.professionalRepository = professionalRepository;
     }
 
-    public List<BreakBetweenResponseDTO> findAll() {
-        return breakBetweenRepository.findAll()
-                .stream()
-                .map(BreakBetweenResponseDTO::fromEntity)
-                .toList();
-    }
-
-    public BreakBetweenResponseDTO findById(Long id) {
-        return BreakBetweenResponseDTO.fromEntity(findEntityById(id));
-    }
-
-    public List<BreakBetweenResponseDTO> findByProfessionalId(Long professionalId) {
-        return breakBetweenRepository.findByProfessionalId(professionalId)
-                .stream()
-                .map(BreakBetweenResponseDTO::fromEntity)
-                .toList();
+    public BreakBetweenResponseDTO findByProfessionalId(Long professionalId) {
+        return BreakBetweenResponseDTO.fromEntity(findEntityByProfessionalId(professionalId));
     }
 
     public BreakBetweenResponseDTO create(BreakBetweenRequestDTO dto) {
+        if (breakBetweenRepository.existsByProfessionalId(dto.professionalId())) {
+            throw new IllegalArgumentException(
+                    "Esse profissional já possui um descanso entre atendimentos cadastrado. Utilize o update.");
+        }
+
         Professional professional = professionalRepository.findById(dto.professionalId())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Professional não encontrado com id: " + dto.professionalId()));
@@ -53,28 +42,20 @@ public class BreakBetweenService {
         return BreakBetweenResponseDTO.fromEntity(breakBetweenRepository.save(breakBetween));
     }
 
-    public BreakBetweenResponseDTO update(Long id, BreakBetweenRequestDTO dto) {
-        BreakBetween breakBetween = findEntityById(id);
-
-        if (!breakBetween.getProfessional().getId().equals(dto.professionalId())) {
-            Professional professional = professionalRepository.findById(dto.professionalId())
-                    .orElseThrow(() -> new EntityNotFoundException(
-                            "Professional não encontrado com id: " + dto.professionalId()));
-            breakBetween.setProfessional(professional);
-        }
-
+    public BreakBetweenResponseDTO updateByProfessionalId(Long professionalId, BreakBetweenRequestDTO dto) {
+        BreakBetween breakBetween = findEntityByProfessionalId(professionalId);
         breakBetween.setBreak_duration(dto.breakDuration());
-
         return BreakBetweenResponseDTO.fromEntity(breakBetweenRepository.save(breakBetween));
     }
 
-    public void delete(Long id) {
-        BreakBetween breakBetween = findEntityById(id);
+    public void deleteByProfessionalId(Long professionalId) {
+        BreakBetween breakBetween = findEntityByProfessionalId(professionalId);
         breakBetweenRepository.delete(breakBetween);
     }
 
-    private BreakBetween findEntityById(Long id) {
-        return breakBetweenRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("BreakBetween não encontrado com id: " + id));
+    private BreakBetween findEntityByProfessionalId(Long professionalId) {
+        return breakBetweenRepository.findByProfessionalId(professionalId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "BreakBetween não encontrado para o profissional: " + professionalId));
     }
 }

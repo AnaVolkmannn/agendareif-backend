@@ -4,7 +4,13 @@ import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "break_between")
+@Table(
+        name = "break_between",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_break_between_professional",
+                columnNames = "professional_id"
+        )
+)
 @NoArgsConstructor
 public class BreakBetween {
 

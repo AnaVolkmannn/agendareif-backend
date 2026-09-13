@@ -57,7 +57,6 @@ public class ScheduleExceptionService {
             LocalDate day = exception.getStartTime().toLocalDate();
             exception.setStartTime(day.atStartOfDay());
             exception.setEndTime(day.plusDays(1).atStartOfDay());
-            exception.setBreakBetween(null);
 
         } else if (exception.getType() == ScheduleException.ExceptionType.SPECIAL) {
             if (exception.getEndTime() == null) {
