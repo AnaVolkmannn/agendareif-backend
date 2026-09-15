@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "schedule_exception")
@@ -27,6 +29,9 @@ public class ScheduleException {
 
     @Column(name = "end_time", nullable = false)
     private LocalDateTime endTime;
+
+    @OneToMany(mappedBy = "scheduleException", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PauseException> pauses = new ArrayList<>();
 
     public enum ExceptionType {
         DAY_OFF,
@@ -75,4 +80,11 @@ public class ScheduleException {
         this.endTime = endTime;
     }
 
+    public List<PauseException> getPauses() {
+        return pauses;
+    }
+
+    public void setPauses(List<PauseException> pauses) {
+        this.pauses = pauses;
+    }
 }
