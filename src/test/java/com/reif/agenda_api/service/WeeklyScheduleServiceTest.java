@@ -1,7 +1,9 @@
 package com.reif.agenda_api.service;
 
+import com.reif.agenda_api.model.PauseWeeklySchedule;
 import com.reif.agenda_api.model.Professional;
 import com.reif.agenda_api.model.WeeklySchedule;
+import com.reif.agenda_api.repository.PauseWeeklyScheduleRepository;
 import com.reif.agenda_api.repository.WeeklyScheduleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,9 @@ class WeeklyScheduleServiceTest {
 
     @Mock
     private WeeklyScheduleRepository weeklyScheduleRepository;
+
+    @Mock
+    private PauseWeeklyScheduleRepository pauseWeeklyScheduleRepository;
 
     @Mock
     private ProfessionalService professionalService;
@@ -58,6 +63,14 @@ class WeeklyScheduleServiceTest {
         dia.setStartTime(inicio);
         dia.setEndTime(fim);
         return dia;
+    }
+
+    private PauseWeeklySchedule intervalo(LocalTime inicio, LocalTime fim) {
+        PauseWeeklySchedule pause = new PauseWeeklySchedule();
+        pause.setWeeklySchedule(segunda);
+        pause.setStartTime(inicio);
+        pause.setEndTime(fim);
+        return pause;
     }
 
     @Test
@@ -206,15 +219,87 @@ class WeeklyScheduleServiceTest {
 
         when(professionalService.findById(1L)).thenReturn(professional);
         when(weeklyScheduleRepository.findByProfessionalIdOrderByDayOfWeekAsc(1L)).thenReturn(List.of(segunda));
+        when(pauseWeeklyScheduleRepository.findByWeeklyScheduleIdOrderByStartTimeAsc(10L)).thenReturn(List.of());
         when(weeklyScheduleRepository.saveAll(anyList())).thenReturn(novaSemana);
 
         List<WeeklySchedule> result = weeklyScheduleService.replaceWeek(1L, novaSemana);
 
         assertThat(result).hasSize(3);
-        assertThat(novaSemana).allMatch(dia -> dia.getProfessional().equals(professional));
+        // A segunda já existia: foi editada no lugar, não recriada.
+        assertThat(segunda.getStartTime()).isEqualTo(LocalTime.of(13, 0));
+        assertThat(segunda.getEndTime()).isEqualTo(LocalTime.of(17, 0));
+        verify(weeklyScheduleRepository, never()).deleteAll(List.of(segunda));
+        verify(weeklyScheduleRepository).saveAll(anyList());
+    }
+
+    @Test
+    void deveManterIntervaloQuandoEleAindaCabeNoHorarioNovo() {
+        PauseWeeklySchedule almoco = intervalo(LocalTime.of(12, 0), LocalTime.of(13, 0));
+        // Antes: 09:00-19:00. Agora sai mais cedo, mas o almoço continua cabendo.
+        List<WeeklySchedule> novaSemana = List.of(novoDia(1, true, LocalTime.of(8, 0), LocalTime.of(18, 0)));
+
+        when(professionalService.findById(1L)).thenReturn(professional);
+        when(weeklyScheduleRepository.findByProfessionalIdOrderByDayOfWeekAsc(1L)).thenReturn(List.of(segunda));
+        when(pauseWeeklyScheduleRepository.findByWeeklyScheduleIdOrderByStartTimeAsc(10L)).thenReturn(List.of(almoco));
+        when(weeklyScheduleRepository.saveAll(anyList())).thenReturn(List.of(segunda));
+
+        weeklyScheduleService.replaceWeek(1L, novaSemana);
+
+        assertThat(segunda.getStartTime()).isEqualTo(LocalTime.of(8, 0));
+        assertThat(segunda.getEndTime()).isEqualTo(LocalTime.of(18, 0));
+        verify(pauseWeeklyScheduleRepository, never()).deleteAll(anyList());
+    }
+
+    @Test
+    void deveRecusarQuandoIntervaloNaoCabeNoHorarioNovo() {
+        PauseWeeklySchedule almoco = intervalo(LocalTime.of(12, 0), LocalTime.of(13, 0));
+        List<WeeklySchedule> novaSemana = List.of(novoDia(1, true, LocalTime.of(13, 0), LocalTime.of(17, 0)));
+
+        when(professionalService.findById(1L)).thenReturn(professional);
+        when(weeklyScheduleRepository.findByProfessionalIdOrderByDayOfWeekAsc(1L)).thenReturn(List.of(segunda));
+        when(pauseWeeklyScheduleRepository.findByWeeklyScheduleIdOrderByStartTimeAsc(10L)).thenReturn(List.of(almoco));
+
+        assertThatThrownBy(() -> weeklyScheduleService.replaceWeek(1L, novaSemana))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("O intervalo das 12:00 às 13:00 não cabe no novo horário de segunda-feira."
+                        + " Remova o intervalo antes de salvar.");
+
+        verify(weeklyScheduleRepository, never()).saveAll(anyList());
+        verify(pauseWeeklyScheduleRepository, never()).deleteAll(anyList());
+    }
+
+    @Test
+    void deveRecusarFecharDiaQueTemIntervalo() {
+        PauseWeeklySchedule almoco = intervalo(LocalTime.of(12, 0), LocalTime.of(13, 0));
+        List<WeeklySchedule> novaSemana = List.of(novoDia(1, false, null, null));
+
+        when(professionalService.findById(1L)).thenReturn(professional);
+        when(weeklyScheduleRepository.findByProfessionalIdOrderByDayOfWeekAsc(1L)).thenReturn(List.of(segunda));
+        when(pauseWeeklyScheduleRepository.findByWeeklyScheduleIdOrderByStartTimeAsc(10L)).thenReturn(List.of(almoco));
+
+        assertThatThrownBy(() -> weeklyScheduleService.replaceWeek(1L, novaSemana))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A segunda-feira tem intervalo cadastrado."
+                        + " Remova o intervalo antes de fechar o dia.");
+
+        verify(weeklyScheduleRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void deveApagarIntervalosDoDiaQueSaiuDaSemana() {
+        PauseWeeklySchedule almoco = intervalo(LocalTime.of(12, 0), LocalTime.of(13, 0));
+        // A segunda não veio na requisição: o dia deixa de existir.
+        List<WeeklySchedule> novaSemana = List.of(novoDia(2, true, LocalTime.of(9, 0), LocalTime.of(18, 0)));
+
+        when(professionalService.findById(1L)).thenReturn(professional);
+        when(weeklyScheduleRepository.findByProfessionalIdOrderByDayOfWeekAsc(1L)).thenReturn(List.of(segunda));
+        when(pauseWeeklyScheduleRepository.findByWeeklyScheduleIdOrderByStartTimeAsc(10L)).thenReturn(List.of(almoco));
+        when(weeklyScheduleRepository.saveAll(anyList())).thenReturn(novaSemana);
+
+        weeklyScheduleService.replaceWeek(1L, novaSemana);
+
+        verify(pauseWeeklyScheduleRepository).deleteAll(List.of(almoco));
         verify(weeklyScheduleRepository).deleteAll(List.of(segunda));
-        verify(weeklyScheduleRepository).flush();
-        verify(weeklyScheduleRepository).saveAll(novaSemana);
     }
 
     @Test
@@ -236,10 +321,25 @@ class WeeklyScheduleServiceTest {
     @Test
     void deveDeletarHorarioComSucesso() {
         when(weeklyScheduleRepository.findByIdAndProfessionalId(10L, 1L)).thenReturn(Optional.of(segunda));
+        when(pauseWeeklyScheduleRepository.findByWeeklyScheduleIdOrderByStartTimeAsc(10L)).thenReturn(List.of());
         doNothing().when(weeklyScheduleRepository).delete(segunda);
 
         weeklyScheduleService.delete(1L, 10L);
 
+        verify(weeklyScheduleRepository).delete(segunda);
+    }
+
+    @Test
+    void deveApagarIntervalosAoDeletarODia() {
+        PauseWeeklySchedule almoco = intervalo(LocalTime.of(12, 0), LocalTime.of(13, 0));
+
+        when(weeklyScheduleRepository.findByIdAndProfessionalId(10L, 1L)).thenReturn(Optional.of(segunda));
+        when(pauseWeeklyScheduleRepository.findByWeeklyScheduleIdOrderByStartTimeAsc(10L)).thenReturn(List.of(almoco));
+        doNothing().when(weeklyScheduleRepository).delete(segunda);
+
+        weeklyScheduleService.delete(1L, 10L);
+
+        verify(pauseWeeklyScheduleRepository).deleteAll(List.of(almoco));
         verify(weeklyScheduleRepository).delete(segunda);
     }
 
