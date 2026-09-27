@@ -15,6 +15,9 @@ public interface SchedulingRepository extends JpaRepository<Scheduling, Long> {
 
     List<Scheduling> findByProfessionalIdAndScheduledAtBetween(
             Long professionalId, LocalDateTime start, LocalDateTime end);
+    
+    List<Scheduling> findByCanceledFalseAndReminderSentFalseAndScheduledAtBetween(
+    LocalDateTime start, LocalDateTime end);
 
     List<Scheduling> findByCanceledFalse();
 
