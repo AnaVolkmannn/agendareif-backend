@@ -13,9 +13,6 @@ public record ProfessionalRequestDTO(
         @Email(message = "E-mail inválido")
         String email,
 
-        @NotBlank(message = "A senha é obrigatória")
-        String password,
-
         @NotBlank(message = "O telefone é obrigatório")
         String phone,
 

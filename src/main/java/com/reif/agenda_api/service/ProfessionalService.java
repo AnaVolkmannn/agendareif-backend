@@ -2,6 +2,8 @@ package com.reif.agenda_api.service;
 
 import com.reif.agenda_api.model.Professional;
 import com.reif.agenda_api.repository.ProfessionalRepository;
+import com.reif.agenda_api.security.TemporaryPasswordGenerator;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,13 +22,24 @@ public class ProfessionalService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Registro feito pelo admin. Gera uma senha temporária, salva com hash e
+     * retorna o par (entidade salva, senha em texto puro) pra exibir uma única vez.
+     */
     @Transactional
-    public Professional register(Professional professional) {
+    public ProfessionalRegistrationResult register(Professional professional) {
         if (professionalRepository.existsByEmail(professional.getEmail())) {
             throw new IllegalArgumentException("Já existe um profissional cadastrado com esse e-mail.");
         }
-        professional.setPassword(passwordEncoder.encode(professional.getPassword()));
-        return professionalRepository.save(professional);
+
+        String rawPassword = TemporaryPasswordGenerator.generate();
+
+        professional.setPassword(passwordEncoder.encode(rawPassword));
+        professional.setMustChangePassword(true);
+
+        Professional saved = professionalRepository.save(professional);
+
+        return new ProfessionalRegistrationResult(saved, rawPassword);
     }
 
     public Professional findById(Long id) {
@@ -55,10 +68,25 @@ public class ProfessionalService {
         return professionalRepository.save(professional);
     }
 
+    /** Usado pelo admin (ex: resetar senha esquecida) — não exige a senha atual. */
     @Transactional
     public void updatePassword(Long id, String newRawPassword) {
         Professional professional = findById(id);
         professional.setPassword(passwordEncoder.encode(newRawPassword));
+        professionalRepository.save(professional);
+    }
+
+    /** Usado pelo próprio profissional (troca voluntária ou primeiro acesso) — exige a senha atual. */
+    @Transactional
+    public void changePassword(Long id, String oldRawPassword, String newRawPassword) {
+        Professional professional = findById(id);
+
+        if (!passwordEncoder.matches(oldRawPassword, professional.getPassword())) {
+            throw new BadCredentialsException("Senha atual incorreta.");
+        }
+
+        professional.setPassword(passwordEncoder.encode(newRawPassword));
+        professional.setMustChangePassword(false);
         professionalRepository.save(professional);
     }
 
