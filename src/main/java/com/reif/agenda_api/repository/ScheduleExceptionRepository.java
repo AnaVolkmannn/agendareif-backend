@@ -15,4 +15,8 @@ public interface ScheduleExceptionRepository extends JpaRepository<ScheduleExcep
     boolean existsByProfessionalIdAndStartTimeLessThanAndEndTimeGreaterThan(
             Long professionalId, LocalDateTime endTime, LocalDateTime startTime
     );
+
+    List<ScheduleException> findByProfessionalIdAndStartTimeLessThanAndEndTimeGreaterThan(
+            Long professionalId, LocalDateTime endTime, LocalDateTime startTime
+    );
 }
