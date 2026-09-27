@@ -45,6 +45,9 @@ public class Professional {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword = true;
+
     public enum ScheduleMode {
         ONLINE,
         MANUAL
@@ -122,5 +125,13 @@ public class Professional {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public boolean isMustChangePassword() {
+    return mustChangePassword;
+    }
+
+    public void setMustChangePassword(boolean mustChangePassword) {
+    this.mustChangePassword = mustChangePassword;
     }
 }

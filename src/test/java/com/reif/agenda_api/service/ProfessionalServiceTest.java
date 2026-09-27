@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -39,7 +40,7 @@ class ProfessionalServiceTest {
         professional.setId(1L);
         professional.setName("João Silva");
         professional.setEmail("joao@email.com");
-        professional.setPassword("senha123");
+        professional.setPassword("hashAntigo");
         professional.setPhone("47999999999");
         professional.setProfilePicture("foto.png");
         professional.setDescription("Descrição do profissional");
@@ -48,16 +49,25 @@ class ProfessionalServiceTest {
 
     @Test
     void deveRegistrarProfissionalComSucesso() {
-        when(professionalRepository.existsByEmail(professional.getEmail())).thenReturn(false);
-        when(passwordEncoder.encode(anyString())).thenReturn("senhaCriptografada");
-        when(professionalRepository.save(any(Professional.class))).thenReturn(professional);
+        Professional novoProfissional = new Professional();
+        novoProfissional.setName("João Silva");
+        novoProfissional.setEmail("joao@email.com");
+        novoProfissional.setPhone("47999999999");
 
-        Professional result = professionalService.register(professional);
+        when(professionalRepository.existsByEmail("joao@email.com")).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("senhaCriptografada");
+        when(professionalRepository.save(any(Professional.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProfessionalRegistrationResult result = professionalService.register(novoProfissional);
 
         assertThat(result).isNotNull();
-        assertThat(result.getEmail()).isEqualTo("joao@email.com");
-        verify(passwordEncoder).encode("senha123");
-        verify(professionalRepository).save(professional);
+        assertThat(result.professional().getEmail()).isEqualTo("joao@email.com");
+        assertThat(result.professional().getPassword()).isEqualTo("senhaCriptografada");
+        assertThat(result.professional().isMustChangePassword()).isTrue();
+        assertThat(result.temporaryPassword()).isNotBlank();
+
+        verify(passwordEncoder).encode(result.temporaryPassword());
+        verify(professionalRepository).save(novoProfissional);
     }
 
     @Test
@@ -69,6 +79,7 @@ class ProfessionalServiceTest {
                 .hasMessage("Já existe um profissional cadastrado com esse e-mail.");
 
         verify(professionalRepository, never()).save(any(Professional.class));
+        verify(passwordEncoder, never()).encode(anyString());
     }
 
     @Test
@@ -145,6 +156,34 @@ class ProfessionalServiceTest {
 
         assertThat(professional.getPassword()).isEqualTo("novaSenhaCriptografada");
         verify(professionalRepository).save(professional);
+    }
+
+    @Test
+    void deveTrocarSenhaComSucessoQuandoSenhaAtualCorreta() {
+        professional.setMustChangePassword(true);
+
+        when(professionalRepository.findById(1L)).thenReturn(Optional.of(professional));
+        when(passwordEncoder.matches("senhaAtual", "hashAntigo")).thenReturn(true);
+        when(passwordEncoder.encode("novaSenha123")).thenReturn("novaSenhaCriptografada");
+
+        professionalService.changePassword(1L, "senhaAtual", "novaSenha123");
+
+        assertThat(professional.getPassword()).isEqualTo("novaSenhaCriptografada");
+        assertThat(professional.isMustChangePassword()).isFalse();
+        verify(professionalRepository).save(professional);
+    }
+
+    @Test
+    void deveLancarExcecaoAoTrocarSenhaComSenhaAtualIncorreta() {
+        when(professionalRepository.findById(1L)).thenReturn(Optional.of(professional));
+        when(passwordEncoder.matches("senhaErrada", "hashAntigo")).thenReturn(false);
+
+        assertThatThrownBy(() -> professionalService.changePassword(1L, "senhaErrada", "novaSenha123"))
+                .isInstanceOf(BadCredentialsException.class)
+                .hasMessage("Senha atual incorreta.");
+
+        verify(professionalRepository, never()).save(any(Professional.class));
+        verify(passwordEncoder, never()).encode(anyString());
     }
 
     @Test

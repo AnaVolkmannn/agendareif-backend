@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/schedulings")
+@RequestMapping("/schedulings")
 public class SchedulingController {
 
     private final SchedulingService schedulingService;
