@@ -23,15 +23,18 @@ public class SchedulingService {
     private final ClientRepository clientRepository;
     private final ProfessionalRepository professionalRepository;
     private final ServiceOfferingRepository serviceOfferingRepository;
+    private final SchedulingEmailService schedulingEmailService;
 
     public SchedulingService(SchedulingRepository schedulingRepository,
                               ClientRepository clientRepository,
                               ProfessionalRepository professionalRepository,
-                              ServiceOfferingRepository serviceOfferingRepository) {
+                              ServiceOfferingRepository serviceOfferingRepository,
+                              SchedulingEmailService schedulingEmailService) {
         this.schedulingRepository = schedulingRepository;
         this.clientRepository = clientRepository;
         this.professionalRepository = professionalRepository;
         this.serviceOfferingRepository = serviceOfferingRepository;
+        this.schedulingEmailService = schedulingEmailService;
     }
 
     @Transactional
@@ -64,7 +67,12 @@ public class SchedulingService {
         scheduling.setCancellationToken(UUID.randomUUID().toString());
         scheduling.setCanceled(false);
 
-        return schedulingRepository.save(scheduling);
+        Scheduling saved = schedulingRepository.save(scheduling);
+
+        // RF11 + RF12: confirmação por e-mail para cliente e profissional, com link de cancelamento.
+        schedulingEmailService.sendConfirmation(saved);
+
+        return saved;
     }
 
     public List<Scheduling> findAll() {
@@ -92,6 +100,9 @@ public class SchedulingService {
     public void cancel(Long id) {
         Scheduling scheduling = findById(id);
         scheduling.setCanceled(true);
+
+        // RF13: alerta de cancelamento por e-mail para cliente e profissional.
+        schedulingEmailService.sendCancellationAlert(scheduling);
     }
 
     @Transactional
@@ -99,6 +110,9 @@ public class SchedulingService {
         Scheduling scheduling = schedulingRepository.findByCancellationToken(token)
                 .orElseThrow(() -> new EntityNotFoundException("Token de cancelamento inválido."));
         scheduling.setCanceled(true);
+
+        // RF13: alerta de cancelamento por e-mail para cliente e profissional.
+        schedulingEmailService.sendCancellationAlert(scheduling);
     }
 
     @Transactional

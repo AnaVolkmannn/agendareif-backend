@@ -46,6 +46,9 @@ public class Scheduling {
     @Column(name = "canceled", nullable = false)
     private boolean canceled = false;
 
+    @Column(name = "reminder_sent", nullable = false)
+    private boolean reminderSent = false;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -119,5 +122,13 @@ public class Scheduling {
 
     public void setCanceled(boolean canceled) {
         this.canceled = canceled;
+    }
+
+    public boolean isReminderSent() {
+    return reminderSent;
+    }
+
+    public void setReminderSent(boolean reminderSent) {
+        this.reminderSent = reminderSent;
     }
 }
