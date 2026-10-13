@@ -3,6 +3,9 @@ package com.reif.agenda_api.service;
 import com.reif.agenda_api.model.Professional;
 import com.reif.agenda_api.repository.ProfessionalRepository;
 import com.reif.agenda_api.security.TemporaryPasswordGenerator;
+
+import jakarta.persistence.EntityNotFoundException;
+
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -78,16 +81,17 @@ public class ProfessionalService {
 
     /** Usado pelo próprio profissional (troca voluntária ou primeiro acesso) — exige a senha atual. */
     @Transactional
-    public void changePassword(Long id, String oldRawPassword, String newRawPassword) {
-        Professional professional = findById(id);
+    public Professional changePassword(Long id, String oldPassword, String newPassword) {
+        Professional p = professionalRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Profissional não encontrado"));
 
-        if (!passwordEncoder.matches(oldRawPassword, professional.getPassword())) {
-            throw new BadCredentialsException("Senha atual incorreta.");
+        if (!passwordEncoder.matches(oldPassword, p.getPassword())) {
+            throw new IllegalArgumentException("Senha atual incorreta");
         }
 
-        professional.setPassword(passwordEncoder.encode(newRawPassword));
-        professional.setMustChangePassword(false);
-        professionalRepository.save(professional);
+        p.setPassword(passwordEncoder.encode(newPassword));
+        p.setMustChangePassword(false);
+        return professionalRepository.save(p);
     }
 
     @Transactional

@@ -4,6 +4,8 @@ import com.reif.agenda_api.dto.*;
 import com.reif.agenda_api.model.Professional;
 import com.reif.agenda_api.service.ProfessionalRegistrationResult;
 import com.reif.agenda_api.service.ProfessionalService;
+import com.reif.agenda_api.security.JwtService;
+import com.reif.agenda_api.security.AuthenticatedUser;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,9 +19,11 @@ import java.util.List;
 public class ProfessionalController {
 
     private final ProfessionalService professionalService;
+    private final JwtService jwtService;
 
-    public ProfessionalController(ProfessionalService professionalService) {
+    public ProfessionalController(ProfessionalService professionalService, JwtService jwtService) {
         this.professionalService = professionalService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping
@@ -87,10 +91,17 @@ public class ProfessionalController {
     /** Troca feita pelo próprio profissional — exige senha atual, usado no primeiro acesso e depois. */
     @PatchMapping("/{id}/change-password")
     @PreAuthorize("hasRole('PROFESSIONAL') and #id == authentication.principal.id")
-    public ResponseEntity<Void> changePassword(@PathVariable("id") Long id,
-                                                @Valid @RequestBody ChangePasswordRequestDTO request) {
-        professionalService.changePassword(id, request.oldPassword(), request.newPassword());
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<LoginResponseDTO> changePassword(@PathVariable("id") Long id,
+                                                        @Valid @RequestBody ChangePasswordRequestDTO request) {
+        Professional p = professionalService.changePassword(id, request.oldPassword(), request.newPassword());
+
+        AuthenticatedUser user = new AuthenticatedUser(
+                p.getId(), p.getEmail(), null, "PROFESSIONAL", false);
+
+        String token = jwtService.generateToken(user);
+
+        return ResponseEntity.ok(new LoginResponseDTO(
+                token, user.getRole(), user.getId(), user.getUsername(), user.isMustChangePassword()));
     }
 
     @DeleteMapping("/{id}")
