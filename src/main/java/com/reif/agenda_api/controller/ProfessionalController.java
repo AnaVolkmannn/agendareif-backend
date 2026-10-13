@@ -6,8 +6,6 @@ import com.reif.agenda_api.service.ProfessionalRegistrationResult;
 import com.reif.agenda_api.service.ProfessionalService;
 import com.reif.agenda_api.security.JwtService;
 import com.reif.agenda_api.security.AuthenticatedUser;
-import com.reif.agenda_api.security.AuthenticatedUser;
-import com.reif.agenda_api.security.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +21,8 @@ public class ProfessionalController {
     private final ProfessionalService professionalService;
     private final JwtService jwtService;
 
-    public ProfessionalController(ProfessionalService professionalService, JwtService jwtService, JwtService jwtService) {
+    public ProfessionalController(ProfessionalService professionalService, JwtService jwtService) {
         this.professionalService = professionalService;
-        this.jwtService = jwtService;
         this.jwtService = jwtService;
     }
 
