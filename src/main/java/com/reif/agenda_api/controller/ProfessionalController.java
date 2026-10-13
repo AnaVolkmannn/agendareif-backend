@@ -6,6 +6,8 @@ import com.reif.agenda_api.service.ProfessionalRegistrationResult;
 import com.reif.agenda_api.service.ProfessionalService;
 import com.reif.agenda_api.security.JwtService;
 import com.reif.agenda_api.security.AuthenticatedUser;
+import com.reif.agenda_api.security.AuthenticatedUser;
+import com.reif.agenda_api.security.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +23,9 @@ public class ProfessionalController {
     private final ProfessionalService professionalService;
     private final JwtService jwtService;
 
-    public ProfessionalController(ProfessionalService professionalService, JwtService jwtService) {
+    public ProfessionalController(ProfessionalService professionalService, JwtService jwtService, JwtService jwtService) {
         this.professionalService = professionalService;
+        this.jwtService = jwtService;
         this.jwtService = jwtService;
     }
 
@@ -93,10 +96,18 @@ public class ProfessionalController {
     @PreAuthorize("hasRole('PROFESSIONAL') and #id == authentication.principal.id")
     public ResponseEntity<LoginResponseDTO> changePassword(@PathVariable("id") Long id,
                                                         @Valid @RequestBody ChangePasswordRequestDTO request) {
-        Professional p = professionalService.changePassword(id, request.oldPassword(), request.newPassword());
+        professionalService.changePassword(id, request.oldPassword(), request.newPassword());
+
+        // Recarrega o profissional já com a senha nova e mustChangePassword = false
+        Professional professional = professionalService.findById(id);
 
         AuthenticatedUser user = new AuthenticatedUser(
-                p.getId(), p.getEmail(), null, "PROFESSIONAL", false);
+                professional.getId(),
+                professional.getEmail(),
+                professional.getPassword(),
+                "PROFESSIONAL",
+                professional.isMustChangePassword()
+        );
 
         String token = jwtService.generateToken(user);
 
