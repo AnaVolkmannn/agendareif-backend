@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -57,8 +58,11 @@ public class SchedulingController {
         return ResponseEntity.ok(result);
     }
 
+    /** Admin vê a agenda de qualquer profissional; profissional só vê a própria (RNF03). */
     @GetMapping("/professional/{professionalId}")
-    public ResponseEntity<List<SchedulingResponseDTO>> findByProfessional(@PathVariable Long professionalId) {
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('PROFESSIONAL') and #professionalId == authentication.principal.id)")
+    public ResponseEntity<List<SchedulingResponseDTO>> findByProfessional(
+            @PathVariable("professionalId") Long professionalId) {
         List<SchedulingResponseDTO> result = schedulingService.findByProfessional(professionalId).stream()
                 .map(SchedulingResponseDTO::new)
                 .collect(Collectors.toList());
@@ -75,11 +79,11 @@ public class SchedulingController {
 
     @GetMapping("/available-slots")
     public ResponseEntity<List<LocalDateTime>> getAvailableSlots(
-        @RequestParam Long professionalId,
-        @RequestParam Long serviceId,
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-    return ResponseEntity.ok(availabilityService.getAvailableSlots(professionalId, serviceId, date));
-}
+            @RequestParam Long professionalId,
+            @RequestParam Long serviceId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return ResponseEntity.ok(availabilityService.getAvailableSlots(professionalId, serviceId, date));
+    }
 
     @PatchMapping("/{id}/cancel")
     public ResponseEntity<Void> cancel(@PathVariable Long id) {
