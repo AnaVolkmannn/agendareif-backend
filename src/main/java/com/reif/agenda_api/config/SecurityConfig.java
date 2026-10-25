@@ -66,7 +66,10 @@ public class SecurityConfig {
                 .requestMatchers("/schedulings/professional/**").hasAnyRole("ADMIN", "PROFESSIONAL")
                 .requestMatchers("/weekly-schedules/**").hasAnyRole("ADMIN", "PROFESSIONAL")
                 .requestMatchers("/schedule-exceptions/**").hasAnyRole("ADMIN", "PROFESSIONAL")
-
+                
+                .requestMatchers(HttpMethod.POST, "/uploads/inspiration").permitAll()
+                .requestMatchers(HttpMethod.POST, "/uploads/**").hasAnyRole("ADMIN", "PROFESSIONAL")
+                
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
