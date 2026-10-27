@@ -15,3 +15,8 @@
 
 - Para acessar o swagger para testar as rotas, com o projeto rodando, abrir no navegador:
   http://localhost:8081/swagger-ui/index.html#/
+
+## Variáveis de ambiente necessárias para rodar (ambiente Azure)
+
+- AZURE_STORAGE_CONNECTION_STRING
+- DB_PASSWORD
