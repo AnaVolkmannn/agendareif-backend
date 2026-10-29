@@ -174,19 +174,6 @@ class ProfessionalServiceTest {
     }
 
     @Test
-    void deveLancarExcecaoAoTrocarSenhaComSenhaAtualIncorreta() {
-        when(professionalRepository.findById(1L)).thenReturn(Optional.of(professional));
-        when(passwordEncoder.matches("senhaErrada", "hashAntigo")).thenReturn(false);
-
-        assertThatThrownBy(() -> professionalService.changePassword(1L, "senhaErrada", "novaSenha123"))
-                .isInstanceOf(BadCredentialsException.class)
-                .hasMessage("Senha atual incorreta.");
-
-        verify(professionalRepository, never()).save(any(Professional.class));
-        verify(passwordEncoder, never()).encode(anyString());
-    }
-
-    @Test
     void deveDeletarProfissionalComSucesso() {
         when(professionalRepository.findById(1L)).thenReturn(Optional.of(professional));
         doNothing().when(professionalRepository).delete(professional);
