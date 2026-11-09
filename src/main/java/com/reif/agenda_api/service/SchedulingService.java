@@ -38,7 +38,8 @@ public class SchedulingService {
     }
 
     @Transactional
-    public Scheduling create(Long clientId, Long professionalId, Long serviceId, LocalDateTime scheduledAt) {
+    public Scheduling create(Long clientId, Long professionalId, Long serviceId, LocalDateTime scheduledAt,
+                             String imageUrl) {
         Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado: " + clientId));
 
@@ -64,6 +65,8 @@ public class SchedulingService {
         scheduling.setProfessional(professional);
         scheduling.setService(service);
         scheduling.setScheduledAt(scheduledAt);
+        // Imagem de inspiração é opcional: a tela permite pular essa etapa.
+        scheduling.setImageUrl(imageUrl);
         scheduling.setCancellationToken(UUID.randomUUID().toString());
         scheduling.setCanceled(false);
 

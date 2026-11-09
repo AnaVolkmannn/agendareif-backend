@@ -18,6 +18,9 @@ public class SchedulingRequestDTO {
     @NotNull
     private LocalDateTime scheduledAt;
 
+    /** Imagem de inspiração enviada pelo cliente (RF05). Opcional. */
+    private String imageUrl;
+
     public SchedulingRequestDTO() {
     }
 
@@ -51,5 +54,13 @@ public class SchedulingRequestDTO {
 
     public void setScheduledAt(LocalDateTime scheduledAt) {
         this.scheduledAt = scheduledAt;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }
