@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Positive;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "service")
@@ -26,8 +28,19 @@ public class ServiceOffering {
     @Column(nullable = false, length = 255)
     private String name;
 
+    /**
+     * Mantido por compatibilidade: espelha a primeira foto. Os serviços
+     * cadastrados antes da lista só têm este campo preenchido.
+     */
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
+
+    /** Fotos do serviço, na ordem em que devem aparecer (no máximo 5). */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "service_photo", joinColumns = @JoinColumn(name = "service_id"))
+    @OrderColumn(name = "position")
+    @Column(name = "url", columnDefinition = "TEXT")
+    private List<String> photos = new ArrayList<>();
 
     @NotNull
     @Positive
@@ -77,6 +90,18 @@ public class ServiceOffering {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public List<String> getPhotos() {
+        return photos;
+    }
+
+    public void setPhotos(List<String> photos) {
+        // Substituir a lista confunde o Hibernate no update; mexemos na que existe.
+        this.photos.clear();
+        if (photos != null) {
+            this.photos.addAll(photos);
+        }
     }
 
     public BigDecimal getPrice() {
