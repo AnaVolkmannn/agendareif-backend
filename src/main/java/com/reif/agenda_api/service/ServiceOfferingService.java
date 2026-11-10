@@ -60,8 +60,13 @@ public class ServiceOfferingService {
     }
 
     private void applyRequest(ServiceOffering service, ServiceOfferingRequestDTO request) {
+        List<String> photos = request.photos() == null ? List.of() : request.photos();
+
         service.setName(request.name());
-        service.setImageUrl(request.imageUrl());
+        service.setPhotos(photos);
+        // imageUrl espelha a primeira foto, para não quebrar quem ainda lê
+        // esse campo. Sem fotos, respeita o que veio na requisição.
+        service.setImageUrl(photos.isEmpty() ? request.imageUrl() : photos.get(0));
         service.setPrice(request.price());
         service.setDescription(request.description());
         service.setDurationMinutes(request.durationMinutes());
