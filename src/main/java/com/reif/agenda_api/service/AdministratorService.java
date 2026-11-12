@@ -53,6 +53,9 @@ public class AdministratorService {
     @Transactional
     public void delete(Long id) {
         Administrator administrator = findById(id);
+        if (administratorRepository.count() <= 1) {
+            throw new IllegalStateException("Não é possível excluir o único administrador do sistema.");
+        }
         administratorRepository.delete(administrator);
     }
 }
