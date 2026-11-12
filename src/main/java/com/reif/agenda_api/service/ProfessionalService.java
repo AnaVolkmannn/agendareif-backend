@@ -62,12 +62,19 @@ public class ProfessionalService {
     @Transactional
     public Professional update(Long id, Professional data) {
         Professional professional = findById(id);
+        if (data.getEmail() != null
+                && !data.getEmail().equalsIgnoreCase(professional.getEmail())
+                && professionalRepository.existsByEmail(data.getEmail())) {
+            throw new IllegalArgumentException("Já existe um profissional cadastrado com esse e-mail.");
+        }
         professional.setName(data.getName());
         professional.setPhone(data.getPhone());
         professional.setEmail(data.getEmail());
         professional.setProfilePicture(data.getProfilePicture());
         professional.setDescription(data.getDescription());
-        professional.setScheduleMode(data.getScheduleMode());
+        if (data.getScheduleMode() != null) {
+            professional.setScheduleMode(data.getScheduleMode());
+        }
         return professionalRepository.save(professional);
     }
 
@@ -76,6 +83,7 @@ public class ProfessionalService {
     public void updatePassword(Long id, String newRawPassword) {
         Professional professional = findById(id);
         professional.setPassword(passwordEncoder.encode(newRawPassword));
+        professional.setMustChangePassword(true);
         professionalRepository.save(professional);
     }
 
@@ -98,5 +106,6 @@ public class ProfessionalService {
     public void delete(Long id) {
         Professional professional = findById(id);
         professionalRepository.delete(professional);
+        professionalRepository.flush();
     }
 }
