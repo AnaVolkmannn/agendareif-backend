@@ -65,8 +65,9 @@ public class SchedulingService {
         scheduling.setProfessional(professional);
         scheduling.setService(service);
         scheduling.setScheduledAt(scheduledAt);
-        // Imagem de inspiração é opcional: a tela permite pular essa etapa.
-        scheduling.setImageUrl(imageUrl);
+        // RF06: a imagem só é guardada se o profissional habilitou inspiração neste serviço.
+        // Mesmo que alguém chame a API direto, o valor é descartado.
+        scheduling.setImageUrl(service.isAcceptsInspiration() ? imageUrl : null);
         scheduling.setCancellationToken(UUID.randomUUID().toString());
         scheduling.setCanceled(false);
 
