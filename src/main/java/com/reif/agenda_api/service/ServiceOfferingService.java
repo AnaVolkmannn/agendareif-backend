@@ -32,9 +32,10 @@ public class ServiceOfferingService {
         return serviceOfferingRepository.save(service);
     }
 
+    /** Ordenado por id: a ordem de cadastro não muda quando um serviço é editado. */
     public List<ServiceOffering> findAllByProfessional(Long professionalId) {
         professionalService.findById(professionalId);
-        return serviceOfferingRepository.findByProfessionalId(professionalId);
+        return serviceOfferingRepository.findByProfessionalIdOrderByIdAsc(professionalId);
     }
 
     public ServiceOffering findOne(Long professionalId, Long id) {

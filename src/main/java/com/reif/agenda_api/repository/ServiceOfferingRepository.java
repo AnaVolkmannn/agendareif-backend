@@ -12,5 +12,8 @@ public interface ServiceOfferingRepository extends JpaRepository<ServiceOffering
 
     List<ServiceOffering> findByProfessionalId(Long professionalId);
 
+    /** Lista na ordem de cadastro (id crescente), mesmo depois de editar. */
+    List<ServiceOffering> findByProfessionalIdOrderByIdAsc(Long professionalId);
+
     Optional<ServiceOffering> findByIdAndProfessionalId(Long id, Long professionalId);
 }
