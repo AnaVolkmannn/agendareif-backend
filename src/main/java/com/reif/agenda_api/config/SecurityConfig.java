@@ -52,6 +52,7 @@ public class SecurityConfig {
 
                 // fluxo do cliente (sem login)
                 .requestMatchers(HttpMethod.GET, "/schedulings/available-slots").permitAll()
+                .requestMatchers(HttpMethod.GET, "/schedulings/available-days").permitAll()
                 .requestMatchers(HttpMethod.POST, "/schedulings").permitAll()
                 .requestMatchers(HttpMethod.POST, "/clients").permitAll() // cadastro do cliente na confirmação (RF07)
                 .requestMatchers(HttpMethod.PATCH, "/schedulings/cancel/token/**").permitAll()

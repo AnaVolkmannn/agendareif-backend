@@ -49,12 +49,17 @@ public class SchedulingService {
         ServiceOffering service = serviceOfferingRepository.findById(serviceId)
                 .orElseThrow(() -> new EntityNotFoundException("Serviço não encontrado: " + serviceId));
 
-        boolean hasConflict = !schedulingRepository
+        // Cancelado não ocupa a agenda: o cálculo de horários livres já os
+        // ignora, e sem esse filtro aqui um cancelamento passava a bloquear
+        // para sempre os horários vizinhos — a tela oferecia o horário e a
+        // criação recusava.
+        boolean hasConflict = schedulingRepository
                 .findByProfessionalIdAndScheduledAtBetween(
                         professionalId,
                         scheduledAt.minusMinutes(service.getDurationMinutes()),
                         scheduledAt.plusMinutes(service.getDurationMinutes()))
-                .isEmpty();
+                .stream()
+                .anyMatch(existente -> !existente.isCanceled());
 
         if (hasConflict) {
             throw new IllegalStateException("Profissional já possui agendamento nesse horário.");
