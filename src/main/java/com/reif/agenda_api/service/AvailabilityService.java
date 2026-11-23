@@ -52,13 +52,59 @@ public class AvailabilityService {
         ServiceOffering service = serviceOfferingRepository.findById(serviceId)
                 .orElseThrow(() -> new EntityNotFoundException("Serviço não encontrado: " + serviceId));
 
-        int durationMinutes = service.getDurationMinutes();
+        AgendaCarregada agenda = carregarAgenda(professionalId, date, date.plusDays(1));
+        return slotsDoDia(agenda, service.getDurationMinutes(), date);
+    }
 
+    /**
+     * Agenda do profissional num período, lida do banco de uma vez só.
+     *
+     * Calcular dia a dia refazendo as consultas custava ~5 idas ao banco por
+     * dia — inviável para um mês inteiro. Aqui buscamos o período todo e o
+     * cálculo de cada dia filtra em memória.
+     */
+    private record AgendaCarregada(
+            Map<Integer, WeeklySchedule> horarioPorDiaDaSemana,
+            Map<Long, List<PauseWeeklySchedule>> pausasDoHorario,
+            List<ScheduleException> excecoes,
+            Map<Long, List<PauseException>> pausasDaExcecao,
+            List<Scheduling> agendamentos) {
+    }
+
+    private AgendaCarregada carregarAgenda(Long professionalId, LocalDate inicio, LocalDate fimExclusivo) {
+        LocalDateTime de = inicio.atStartOfDay();
+        LocalDateTime ate = fimExclusivo.atStartOfDay();
+
+        Map<Integer, WeeklySchedule> horarios = new HashMap<>();
+        Map<Long, List<PauseWeeklySchedule>> pausasDoHorario = new HashMap<>();
+        for (WeeklySchedule horario : weeklyScheduleRepository.findByProfessionalIdOrderByDayOfWeekAsc(professionalId)) {
+            horarios.put(horario.getDayOfWeek(), horario);
+            pausasDoHorario.put(horario.getId(),
+                    pauseWeeklyScheduleRepository.findByWeeklyScheduleIdOrderByStartTimeAsc(horario.getId()));
+        }
+
+        List<ScheduleException> excecoes = scheduleExceptionRepository
+                .findByProfessionalIdAndStartTimeLessThanAndEndTimeGreaterThan(professionalId, ate, de);
+
+        Map<Long, List<PauseException>> pausasDaExcecao = new HashMap<>();
+        for (ScheduleException excecao : excecoes) {
+            pausasDaExcecao.put(excecao.getId(), pauseExceptionRepository.findByScheduleExceptionId(excecao.getId()));
+        }
+
+        List<Scheduling> agendamentos =
+                schedulingRepository.findByProfessionalIdAndScheduledAtBetween(professionalId, de, ate);
+
+        return new AgendaCarregada(horarios, pausasDoHorario, excecoes, pausasDaExcecao, agendamentos);
+    }
+
+    /** Horários livres de um dia, a partir da agenda já carregada. */
+    private List<LocalDateTime> slotsDoDia(AgendaCarregada agenda, int durationMinutes, LocalDate date) {
         LocalDateTime dayStart = date.atStartOfDay();
         LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
 
-        List<ScheduleException> exceptions = scheduleExceptionRepository
-                .findByProfessionalIdAndStartTimeLessThanAndEndTimeGreaterThan(professionalId, dayEnd, dayStart);
+        List<ScheduleException> exceptions = agenda.excecoes().stream()
+                .filter(e -> e.getStartTime().isBefore(dayEnd) && e.getEndTime().isAfter(dayStart))
+                .toList();
 
         Optional<ScheduleException> specialException = exceptions.stream()
                 .filter(e -> e.getType() == ScheduleException.ExceptionType.SPECIAL)
@@ -71,23 +117,21 @@ public class AvailabilityService {
             ScheduleException exception = specialException.get();
             baseWindows.add(clampToDay(exception.getStartTime(), exception.getEndTime(), date));
 
-            for (PauseException pause : pauseExceptionRepository.findByScheduleExceptionId(exception.getId())) {
+            for (PauseException pause : agenda.pausasDaExcecao().getOrDefault(exception.getId(), List.of())) {
                 blockedIntervals.add(clampToDay(pause.getStartTime(), pause.getEndTime(), date));
             }
         } else {
             int dayOfWeek = date.getDayOfWeek().getValue() % 7; // 0 = domingo ... 6 = sábado
 
-            Optional<WeeklySchedule> weeklySchedule = weeklyScheduleRepository
-                    .findByProfessionalIdAndDayOfWeek(professionalId, dayOfWeek);
+            WeeklySchedule schedule = agenda.horarioPorDiaDaSemana().get(dayOfWeek);
 
-            if (weeklySchedule.isEmpty() || !weeklySchedule.get().isActive()) {
+            if (schedule == null || !schedule.isActive()) {
                 return List.of(); // dia fechado / sem expediente cadastrado
             }
 
-            WeeklySchedule schedule = weeklySchedule.get();
             baseWindows.add(new Interval(schedule.getStartTime(), schedule.getEndTime()));
 
-            for (PauseWeeklySchedule pause : pauseWeeklyScheduleRepository.findByWeeklyScheduleIdOrderByStartTimeAsc(schedule.getId())) {
+            for (PauseWeeklySchedule pause : agenda.pausasDoHorario().getOrDefault(schedule.getId(), List.of())) {
                 blockedIntervals.add(new Interval(pause.getStartTime(), pause.getEndTime()));
             }
         }
@@ -98,7 +142,11 @@ public class AvailabilityService {
                 .forEach(e -> blockedIntervals.add(clampToDay(e.getStartTime(), e.getEndTime(), date)));
 
         // Agendamentos ativos do profissional no dia também bloqueiam
-        for (Scheduling scheduling : schedulingRepository.findByProfessionalIdAndScheduledAtBetween(professionalId, dayStart, dayEnd)) {
+        for (Scheduling scheduling : agenda.agendamentos()) {
+            LocalDateTime quando = scheduling.getScheduledAt();
+            if (quando.isBefore(dayStart) || !quando.isBefore(dayEnd)) {
+                continue; // de outro dia do período carregado
+            }
             if (scheduling.isCanceled()) {
                 continue; // agendamento cancelado libera o horário automaticamente
             }
@@ -198,6 +246,41 @@ public class AvailabilityService {
         }
 
         return slots;
+    }
+
+    /**
+     * Dias de um mês em que sobra pelo menos um horário livre.
+     *
+     * O calendário do cliente precisa saber isso de todos os dias de uma vez
+     * para marcar os disponíveis e desabilitar o resto. Sem esta rota, o front
+     * teria que chamar getAvailableSlots uma vez por dia — ~30 requisições a
+     * cada troca de mês.
+     *
+     * Dias passados são ignorados: não há como agendar para trás.
+     */
+    public List<Integer> getDaysWithAvailability(Long professionalId, Long serviceId, int year, int month) {
+        professionalRepository.findById(professionalId)
+                .orElseThrow(() -> new EntityNotFoundException("Profissional não encontrado: " + professionalId));
+
+        ServiceOffering service = serviceOfferingRepository.findById(serviceId)
+                .orElseThrow(() -> new EntityNotFoundException("Serviço não encontrado: " + serviceId));
+
+        LocalDate primeiroDia = LocalDate.of(year, month, 1);
+        LocalDate hoje = LocalDate.now();
+
+        // Mês inteiro numa carga só; o resto é cálculo em memória.
+        AgendaCarregada agenda = carregarAgenda(professionalId, primeiroDia, primeiroDia.plusMonths(1));
+
+        List<Integer> dias = new ArrayList<>();
+        for (int dia = 1; dia <= primeiroDia.lengthOfMonth(); dia++) {
+            LocalDate data = LocalDate.of(year, month, dia);
+            if (data.isBefore(hoje)) continue;
+
+            if (!slotsDoDia(agenda, service.getDurationMinutes(), data).isEmpty()) {
+                dias.add(dia);
+            }
+        }
+        return dias;
     }
 
     private LocalTime maxTime(LocalTime a, LocalTime b) { return a.isAfter(b) ? a : b; }

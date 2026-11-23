@@ -86,6 +86,17 @@ public class SchedulingController {
         return ResponseEntity.ok(availabilityService.getAvailableSlots(professionalId, serviceId, date));
     }
 
+    /** Dias do mês com pelo menos um horário livre, para o calendário do cliente. */
+    @GetMapping("/available-days")
+    public ResponseEntity<List<Integer>> getAvailableDays(
+            @RequestParam Long professionalId,
+            @RequestParam Long serviceId,
+            @RequestParam int year,
+            @RequestParam int month) {
+        return ResponseEntity.ok(
+                availabilityService.getDaysWithAvailability(professionalId, serviceId, year, month));
+    }
+
     @PatchMapping("/{id}/cancel")
     public ResponseEntity<Void> cancel(@PathVariable Long id) {
         schedulingService.cancel(id);
