@@ -34,7 +34,7 @@ public class SchedulingController {
     public ResponseEntity<SchedulingResponseDTO> create(@Valid @RequestBody SchedulingRequestDTO dto) {
         Scheduling scheduling = schedulingService.create(
                 dto.getClientId(), dto.getProfessionalId(), dto.getServiceId(), dto.getScheduledAt(),
-                dto.getImageUrl());
+                dto.getImageUrl(), dto.getObservation());
         return ResponseEntity.status(HttpStatus.CREATED).body(new SchedulingResponseDTO(scheduling));
     }
 

@@ -39,7 +39,7 @@ public class SchedulingService {
 
     @Transactional
     public Scheduling create(Long clientId, Long professionalId, Long serviceId, LocalDateTime scheduledAt,
-                             String imageUrl) {
+                             String imageUrl, String observation) {
         Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado: " + clientId));
 
@@ -65,9 +65,11 @@ public class SchedulingService {
         scheduling.setProfessional(professional);
         scheduling.setService(service);
         scheduling.setScheduledAt(scheduledAt);
-        // RF06: a imagem só é guardada se o profissional habilitou inspiração neste serviço.
-        // Mesmo que alguém chame a API direto, o valor é descartado.
-        scheduling.setImageUrl(service.isAcceptsInspiration() ? imageUrl : null);
+        // Imagem de inspiração é opcional: a tela permite pular essa etapa.
+        scheduling.setImageUrl(imageUrl);
+        // Observação é opcional: texto vazio vira nulo.
+        scheduling.setObservation(
+                observation == null || observation.isBlank() ? null : observation.trim());
         scheduling.setCancellationToken(UUID.randomUUID().toString());
         scheduling.setCanceled(false);
 
