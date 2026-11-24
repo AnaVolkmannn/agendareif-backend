@@ -1,6 +1,7 @@
 package com.reif.agenda_api.dto;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 
@@ -20,6 +21,10 @@ public class SchedulingRequestDTO {
 
     /** Imagem de inspiração enviada pelo cliente (RF05). Opcional. */
     private String imageUrl;
+
+    /** Observação do cliente para o profissional. Opcional, até 300 caracteres. */
+    @Size(max = 300, message = "A observação deve ter no máximo 300 caracteres")
+    private String observation;
 
     public SchedulingRequestDTO() {
     }
@@ -62,5 +67,13 @@ public class SchedulingRequestDTO {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public String getObservation() {
+        return observation;
+    }
+
+    public void setObservation(String observation) {
+        this.observation = observation;
     }
 }

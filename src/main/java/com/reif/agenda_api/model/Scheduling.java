@@ -40,6 +40,10 @@ public class Scheduling {
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
+    /** Observação digitada pelo cliente ao agendar (até 300 caracteres). Opcional. */
+    @Column(name = "observation", length = 300)
+    private String observation;
+
     @Column(name = "cancellation_token", columnDefinition = "TEXT")
     private String cancellationToken;
 
@@ -108,6 +112,14 @@ public class Scheduling {
         this.imageUrl = imageUrl;
     }
 
+    public String getObservation() {
+        return observation;
+    }
+
+    public void setObservation(String observation) {
+        this.observation = observation;
+    }
+
     public String getCancellationToken() {
         return cancellationToken;
     }
@@ -125,7 +137,7 @@ public class Scheduling {
     }
 
     public boolean isReminderSent() {
-    return reminderSent;
+        return reminderSent;
     }
 
     public void setReminderSent(boolean reminderSent) {

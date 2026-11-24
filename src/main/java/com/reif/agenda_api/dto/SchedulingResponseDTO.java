@@ -17,6 +17,7 @@ public class SchedulingResponseDTO {
     private LocalDateTime createdAt;
     private boolean canceled;
     private String imageUrl;
+    private String observation;
 
     public SchedulingResponseDTO(Scheduling scheduling) {
         this.id = scheduling.getId();
@@ -30,6 +31,7 @@ public class SchedulingResponseDTO {
         this.createdAt = scheduling.getCreatedAt();
         this.canceled = scheduling.isCanceled();
         this.imageUrl = scheduling.getImageUrl();
+        this.observation = scheduling.getObservation();
     }
 
     public Long getId() {
@@ -74,5 +76,9 @@ public class SchedulingResponseDTO {
 
     public String getImageUrl() {
         return imageUrl;
+    }
+
+    public String getObservation() {
+        return observation;
     }
 }
